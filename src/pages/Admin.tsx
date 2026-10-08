@@ -1,3 +1,4 @@
+import { ShowcaseAdminPanel } from "@/components/admin/ShowcaseAdminPanel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@/lib/router-compat";
@@ -1104,6 +1105,9 @@ export default function Admin() {
             <TabsTrigger value="delivery" data-testid="tab-delivery">
               Levering
             </TabsTrigger>
+            <TabsTrigger value="showcase" data-testid="tab-showcase">
+              Live voorbeelden
+            </TabsTrigger>
             <TabsTrigger value="deployment" data-testid="tab-deployment">
               {t("admin.tab.deployment")}
             </TabsTrigger>
@@ -1958,6 +1962,9 @@ export default function Admin() {
             <AdminSettings section="delivery" />
           </TabsContent>
 
+          <TabsContent value="showcase" className="space-y-3">
+            <ShowcaseAdminPanel />
+          </TabsContent>
           <TabsContent value="deployment" className="space-y-3">
             <AdminSettings section="deployment" userEmail={user?.email ?? undefined} />
           </TabsContent>

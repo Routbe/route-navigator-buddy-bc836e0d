@@ -1,3 +1,4 @@
+import { PhoneShowcase } from "@/components/home/PhoneShowcase";
 import { useMemo, useState } from "react";
 import {
   ArrowRight,
@@ -133,7 +134,8 @@ function downloadVcard() {
 }
 
 /** Authentiek, interactief @rout profiel — geen dummy-persoon. */
-function RoutProfileCard() {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function RoutProfileCard() {
   const { t } = useI18n();
   const badges = useMemo(
     () => [
@@ -364,7 +366,7 @@ export default function About() {
               </span>
             </div>
           </div>
-          <RoutProfileCard />
+          <PhoneShowcase lead={["rout"]} />
         </section>
 
         <section className="mt-20 grid gap-4 sm:mt-28 sm:grid-cols-2">
