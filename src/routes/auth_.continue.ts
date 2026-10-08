@@ -1,0 +1,72 @@
+import { createFileRoute } from "@tanstack/react-router";
+import {
+  DEFAULT_DESTINATION,
+  NEXT_COOKIE,
+  SIGN_IN_PATH,
+  TOUR_DRAFT_COOKIE,
+  cleanAuthError,
+  safeNextPath,
+} from "@/lib/auth/post-auth";
+
+function readCookie(header: string | null, name: string): string | null {
+  for (const part of (header ?? "").split(";")) {
+    const [k, ...v] = part.trim().split("=");
+    if (k === name) return v.join("=") || null;
+  }
+  return null;
+}
+
+function seeOther(location: string, cookies: string[] = []) {
+  const headers = new Headers({ Location: location, "Cache-Control": "no-store" });
+  for (const c of cookies) headers.append("Set-Cookie", c);
+  return new Response(null, { status: 303, headers });
+}
+
+const clearNext = `${NEXT_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
+
+/**
+ * Single landing point after every sign-in (OAuth, magic link, password,
+ * Bluesky, Mastodon). Resolves the session server-side and answers with one
+ * 303 to a clean destination — no tokens or flags ever reach the final URL.
+ */
+export async function handlePostAuth(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const error = url.searchParams.get("error");
+  if (error) {
+    console.warn("[auth] post-auth error", { error });
+    return seeOther(`${SIGN_IN_PATH}?error=${cleanAuthError(error)}`, [clearNext]);
+  }
+
+  const { currentUser } = await import("@/lib/auth/session.server");
+  const user = await currentUser().catch((err) => {
+    console.error("[auth] post-auth session lookup failed", err);
+    return null;
+  });
+  if (!user) return seeOther(`${SIGN_IN_PATH}?error=session_missing`, [clearNext]);
+
+  const cookieHeader = request.headers.get("cookie");
+  const draftToken = readCookie(cookieHeader, TOUR_DRAFT_COOKIE);
+  let next = safeNextPath(readCookie(cookieHeader, NEXT_COOKIE)) ?? null;
+
+  // A pending tour draft always wins: copy it to the account and finish onboarding.
+  if (draftToken) {
+    try {
+      const { readTourDraftByToken, upsertTourDraft } = await import("@/lib/tour-draft.server");
+      const draft = await readTourDraftByToken(decodeURIComponent(draftToken));
+      if (draft && user.email) await upsertTourDraft(user.email.trim().toLowerCase(), draft);
+    } catch (err) {
+      console.error("[auth] post-auth draft copy failed", err);
+    }
+    next = "/onboarding";
+  }
+
+  return seeOther(next ?? DEFAULT_DESTINATION, [clearNext]);
+}
+
+export const Route = createFileRoute("/auth_/continue")({
+  server: {
+    handlers: {
+      GET: ({ request }) => handlePostAuth(request),
+    },
+  },
+});

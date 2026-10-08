@@ -1,0 +1,83 @@
+{
+  "source": "github:Routbe/route-navigator-buddy-411c2b47",
+  "approach": "code-import-keep-backend",
+  "capabilities": [
+    {
+      "capability": "code",
+      "source": "github",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "None — 812 src files, deps installed, build OK, typecheck clean, homepage + auth page render without console errors"
+    },
+    {
+      "capability": "schema",
+      "source": "Neon PostgreSQL (db/sql/00-51)",
+      "outcome": "preserve-external",
+      "status": "verified",
+      "next_action": "Kept on Neon per user choice; health check SELECT 1 returns operational"
+    },
+    {
+      "capability": "records",
+      "source": "Neon PostgreSQL",
+      "outcome": "preserve-external",
+      "status": "external",
+      "next_action": "Data stays in user's Neon database; no export/import needed"
+    },
+    {
+      "capability": "auth-identities",
+      "source": "Better Auth (passkeys/WebAuthn) on Neon",
+      "outcome": "preserve-external",
+      "status": "partial",
+      "next_action": "Sign-in page verified (tiles + email form render, no errors); actual sign-in flow pending PUBLIC_SITE_URL / Brevo sender config"
+    },
+    {
+      "capability": "authorization",
+      "source": "Server-side checks in TanStack server functions",
+      "outcome": "preserve",
+      "status": "pending-verification",
+      "next_action": "Verify authenticated areas after a successful sign-in"
+    },
+    {
+      "capability": "uploaded-file-bytes",
+      "source": "Scaleway Object Storage",
+      "outcome": "preserve-external",
+      "status": "external",
+      "next_action": "SCALEWAY_* secrets saved; verify an upload flow"
+    },
+    {
+      "capability": "external-providers",
+      "source": "Stripe, Brevo, bunq, Turnstile, Telegram, WhatsApp, OAuth providers",
+      "outcome": "preserve-external",
+      "status": "partial",
+      "next_action": "Stripe/Brevo/Scaleway/Turnstile secrets saved; OAuth providers, bunq, Telegram/WhatsApp/SMS, Apple, Infomaniak, OIDC keys still optional"
+    },
+    {
+      "capability": "public-endpoints-webhooks-cron",
+      "source": "src/routes/api/*",
+      "outcome": "preserve",
+      "status": "partial",
+      "next_action": "Health endpoint verified; provider webhooks point to the Vercel domain — register preview/deploy URLs with providers at cutover"
+    },
+    {
+      "capability": "secrets",
+      "source": "Existing provider dashboards",
+      "outcome": "request",
+      "status": "partial",
+      "next_action": "18 secrets saved (DATABASE_URL, auth, Stripe, Brevo, Scaleway, Turnstile); remaining optional keys pending"
+    },
+    {
+      "capability": "cutover",
+      "source": "n/a",
+      "outcome": "none",
+      "status": "external",
+      "next_action": "Production stays on Vercel; no cutover performed"
+    },
+    {
+      "capability": "verification",
+      "source": "n/a",
+      "outcome": "verify",
+      "status": "verified",
+      "next_action": "Code migration verified: build OK, typecheck clean, homepage + /auth render, Neon reachable"
+    }
+  ]
+}
