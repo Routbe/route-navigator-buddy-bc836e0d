@@ -140,19 +140,14 @@ export function createRoutAuth(request?: Request) {
         } catch (err) {
           console.error("[auth] draft link at magic-link send failed", err);
         }
-        const { sendMail } = await import("@/emails/send.server");
-        const result = await sendMail({
+        // Alleen de centrale dienst: taal uit cookie/browser, nooit blokkerend of gooiend.
+        const { sendLocalizedEmail, localeFromRequest } = await import("@/lib/email.server");
+        await sendLocalizedEmail({
           to: email,
-          subject: "Je inloglink voor ROUT",
-          html: `<p>Klik om in te loggen bij ROUT:</p><p><a href="${url}">Inloggen</a></p><p>Deze link werkt 15 minuten en maar één keer.</p>`,
-          text: `Log in bij ROUT: ${url}\n\nDeze link werkt 15 minuten en maar één keer.`,
-          tags: ["magic-link"],
+          intent: "magic-link",
+          locale: localeFromRequest(request),
+          payload: { link: url },
         });
-        if (!result.sent) {
-          console.error("[auth] magic link email failed:", result.error);
-          const { APIError } = await import("better-auth/api");
-          throw new APIError("SERVICE_UNAVAILABLE", { code: "EMAIL_SEND_FAILED", message: "We konden de inlogmail niet versturen. Probeer een wachtwoord of Google." });
-        }
       },
     }),
   ];
