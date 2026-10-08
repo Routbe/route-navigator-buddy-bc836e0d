@@ -1,5 +1,5 @@
-import { PhoneShowcase } from "@/components/home/PhoneShowcase";
 import { useMemo, useState } from "react";
+import { EyeOff, Globe2, Lock } from "lucide-react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -24,6 +24,13 @@ import { useI18n } from "@/lib/i18n";
  * meting, geen cookiemuur. De enige interacties zijn het claimveld en de
  * vCard-download van het officiële @rout profiel.
  */
+
+const MISSION = [
+  { icon: Globe2, title: "Europese infrastructuur", body: "Je pagina, bestanden en gegevens draaien op Europese servers. Geen Amerikaanse cloud, geen doorverkoop, onder Europees recht." },
+  { icon: EyeOff, title: "Nul trackers", body: "Geen advertentiepixels, geen cookiemuur, geen fingerprinting. Bezoekers van je profiel worden niet gevolgd, ook niet door ons." },
+  { icon: Lock, title: "Privacy eerst", body: "SecureShield verbergt je echte e-mailadres en je bepaalt zelf wat publiek is. Je data exporteer of wis je met één klik." },
+  { icon: ShieldCheck, title: "Soevereine identiteit", body: "Eén naam, één schone link, geverifieerd door mensen. Je identiteit is van jou en verhuist mee naar je eigen domein." },
+] as const;
 
 const HANDLE_RE = /[^a-z0-9._-]/g;
 
@@ -343,58 +350,29 @@ export default function About() {
     <AppLayout crumbs={[{ label: t("about.crumb") }]} trustBadges>
       {/* pb-28 houdt de laatste CTA vrij van de footer en de zwevende knop */}
       <div className="mx-auto max-w-5xl px-4 py-12 pb-28 sm:px-6 sm:py-20">
-        <section className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <span className="eyebrow">{t("about.hero.eyebrow")}</span>
-            <h1 className="mb-4 mt-2 font-serif text-2xl font-medium leading-tight tracking-tight text-foreground sm:text-4xl">
-              {t("about.hero.title")}
-            </h1>
-            <p className="max-w-xl font-sans text-base text-muted-foreground sm:text-lg">
-              {t("about.hero.body")}
-            </p>
-            <HandleClaim />
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5" aria-hidden />{" "}
-                {t("about.hero.badge.noDataHarvest")}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Palette className="h-3.5 w-3.5" aria-hidden /> {t("about.hero.badge.themes")}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5" aria-hidden /> {t("about.hero.badge.secureshield")}
-              </span>
-            </div>
-          </div>
-          <PhoneShowcase lead={["rout"]} />
+        {/* Manifest: alleen typografie, geen telefoon of carrousel. */}
+        <section className="pt-4 sm:pt-10">
+          <span className="eyebrow">{t("about.hero.eyebrow")}</span>
+          <h1 className="mt-4 max-w-4xl font-serif text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+            {t("about.hero.title")}
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+            {t("about.hero.body")}
+          </p>
+          <HandleClaim />
         </section>
 
-        <section className="mt-20 grid gap-4 sm:mt-28 sm:grid-cols-2">
-          {features.map(({ icon: Icon, ...feature }) => (
-            <article key={feature.title} className={CARD}>
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background">
-                <Icon className="h-4 w-4 text-foreground" aria-hidden />
-              </span>
-              <p className="mt-4 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                {feature.eyebrow}
-              </p>
-              <h2 className="mt-1 font-serif text-xl font-semibold text-foreground sm:text-2xl">
-                {feature.title}
-              </h2>
-              <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">
-                {feature.body}
-              </p>
-              <ul className="mt-4 space-y-1.5">
-                {feature.points.map((point) => (
-                  <li key={point} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <span
-                      aria-hidden
-                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-foreground/50"
-                    />
-                    {point}
-                  </li>
-                ))}
-              </ul>
+        <section className="mt-24 divide-y divide-border border-y border-border sm:mt-32">
+          {MISSION.map((m, i) => (
+            <article key={m.title} className="grid gap-4 py-10 sm:grid-cols-[120px_1fr] sm:py-14">
+              <span className="font-mono text-sm text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+              <div>
+                <h2 className="flex items-center gap-3 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                  <m.icon className="h-6 w-6 shrink-0 sm:h-7 sm:w-7" aria-hidden />
+                  {m.title}
+                </h2>
+                <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">{m.body}</p>
+              </div>
             </article>
           ))}
         </section>
@@ -458,26 +436,6 @@ export default function About() {
           </Link>
         </section>
 
-        <section className={`mt-16 ${CARD}`}>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            {t("about.why.eyebrow")}
-          </p>
-          <h2 className="mt-2 font-serif text-xl font-semibold text-foreground sm:text-2xl">
-            {t("about.why.title")}
-          </h2>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2">
-            <p className="text-[15px] leading-relaxed text-muted-foreground">
-              {t("about.why.body1")}
-            </p>
-            <p className="text-[15px] leading-relaxed text-muted-foreground">
-              {t("about.why.body2Prefix")} <code className="font-mono text-xs">.json</code>
-              {t("about.why.body2Suffix")}
-            </p>
-          </div>
-
-          <ComparisonMatrix />
-        </section>
-
         {/* Eén ultieme CTA onderaan: de rondleiding is het startpunt. */}
         <section className="relative mt-16 overflow-hidden rounded-[2rem] border border-border bg-foreground px-6 py-12 text-center text-background shadow-lg sm:px-10 sm:py-16">
           <div
@@ -504,6 +462,9 @@ export default function About() {
                   className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
                   aria-hidden
                 />
+              </Link>
+              <Link to="/explore" className="inline-flex items-center gap-1.5 text-sm font-medium underline-offset-4 opacity-80 hover:underline hover:opacity-100">
+                Bekijk echte profielen <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </Link>
               <p className="text-xs opacity-60">{t("about.handleClaim.hint")}</p>
             </div>

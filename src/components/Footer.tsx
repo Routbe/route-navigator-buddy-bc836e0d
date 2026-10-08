@@ -41,6 +41,7 @@ const SUPPORT = [
   { to: "/sovereignty", label: "Sovereignty" },
   { to: "/privacy", label: "Privacy policy" },
   { to: "/manifesto", label: "Manifesto" },
+  { to: "/explore", label: "Explore profiles" },
   { to: "/press", label: "Press & brand kit" },
   { to: "/terms", label: "Terms" },
 ];

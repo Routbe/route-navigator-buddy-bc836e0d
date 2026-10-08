@@ -42,3 +42,43 @@ export const saveShowcaseHandles = createServerFn({ method: "POST" })
     }
     return unique;
   });
+
+export type ShowcaseCard = {
+  handle: string;
+  displayName: string | null;
+  tagline: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
+  verified: boolean;
+};
+
+/** Public: snapshot data for the /explore bento grid (private profiles are skipped). */
+export const listShowcaseCards = createServerFn({ method: "GET" }).handler(async (): Promise<ShowcaseCard[]> => {
+  const handles = await listShowcaseHandles();
+  if (!handles.length) return [];
+  try {
+    const { sql } = await import("@/lib/neon");
+    const rows = (await sql`
+      select username, display_name, tagline, bio, avatar_url, coalesce(verified, false) as verified, display_prefs
+        from public.profiles where lower(username) = any(${handles})
+    `) as Record<string, unknown>[];
+    const byHandle = new Map(rows.map((r) => [String(r["username"]).toLowerCase(), r]));
+    return handles.flatMap((h) => {
+      const r = byHandle.get(h);
+      if (!r) return [];
+      const prefs = (r["display_prefs"] ?? {}) as Record<string, unknown>;
+      if (prefs["publicProfile"] === false) return [];
+      return [{
+        handle: h,
+        displayName: (r["display_name"] as string | null) ?? null,
+        tagline: (r["tagline"] as string | null) ?? null,
+        bio: (r["bio"] as string | null) ?? null,
+        avatarUrl: (r["avatar_url"] as string | null) ?? null,
+        verified: Boolean(r["verified"]),
+      }];
+    });
+  } catch (e) {
+    console.warn("[showcase] cards failed", e);
+    return handles.map((h) => ({ handle: h, displayName: null, tagline: null, bio: null, avatarUrl: null, verified: false }));
+  }
+});

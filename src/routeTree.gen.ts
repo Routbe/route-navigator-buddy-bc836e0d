@@ -20,6 +20,7 @@ import { Route as CardRouteImport } from './routes/card'
 import { Route as ClaimRouteImport } from './routes/claim'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EmailTemplatesRouteImport } from './routes/email-templates'
+import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as GiftRouteImport } from './routes/gift'
 import { Route as GoRouteImport } from './routes/go'
 import { Route as HubRouteImport } from './routes/hub'
@@ -179,6 +180,11 @@ const ContactRoute = ContactRouteImport.update({
 const EmailTemplatesRoute = EmailTemplatesRouteImport.update({
   id: '/email-templates',
   path: '/email-templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GiftRoute = GiftRouteImport.update({
@@ -758,6 +764,7 @@ export interface FileRoutesByFullPath {
   '/claim': typeof ClaimRoute
   '/contact': typeof ContactRoute
   '/email-templates': typeof EmailTemplatesRoute
+  '/explore': typeof ExploreRoute
   '/gift': typeof GiftRoute
   '/go': typeof GoRoute
   '/hub': typeof HubRoute
@@ -875,6 +882,7 @@ export interface FileRoutesByTo {
   '/claim': typeof ClaimRoute
   '/contact': typeof ContactRoute
   '/email-templates': typeof EmailTemplatesRoute
+  '/explore': typeof ExploreRoute
   '/gift': typeof GiftRoute
   '/go': typeof GoRoute
   '/hub': typeof HubRoute
@@ -992,6 +1000,7 @@ export interface FileRoutesById {
   '/claim': typeof ClaimRoute
   '/contact': typeof ContactRoute
   '/email-templates': typeof EmailTemplatesRoute
+  '/explore': typeof ExploreRoute
   '/gift': typeof GiftRoute
   '/go': typeof GoRoute
   '/hub': typeof HubRoute
@@ -1112,6 +1121,7 @@ export interface FileRouteTypes {
     | '/claim'
     | '/contact'
     | '/email-templates'
+    | '/explore'
     | '/gift'
     | '/go'
     | '/hub'
@@ -1229,6 +1239,7 @@ export interface FileRouteTypes {
     | '/claim'
     | '/contact'
     | '/email-templates'
+    | '/explore'
     | '/gift'
     | '/go'
     | '/hub'
@@ -1345,6 +1356,7 @@ export interface FileRouteTypes {
     | '/claim'
     | '/contact'
     | '/email-templates'
+    | '/explore'
     | '/gift'
     | '/go'
     | '/hub'
@@ -1465,6 +1477,7 @@ export interface RootRouteChildren {
   ClaimRoute: typeof ClaimRoute
   ContactRoute: typeof ContactRoute
   EmailTemplatesRoute: typeof EmailTemplatesRoute
+  ExploreRoute: typeof ExploreRoute
   GiftRoute: typeof GiftRoute
   GoRoute: typeof GoRoute
   HubRoute: typeof HubRoute
@@ -1607,6 +1620,13 @@ declare module '@tanstack/react-router' {
       path: '/email-templates'
       fullPath: '/email-templates'
       preLoaderRoute: typeof EmailTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gift': {
@@ -2562,6 +2582,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClaimRoute: ClaimRoute,
   ContactRoute: ContactRoute,
   EmailTemplatesRoute: EmailTemplatesRoute,
+  ExploreRoute: ExploreRoute,
   GiftRoute: GiftRoute,
   GoRoute: GoRoute,
   HubRoute: HubRoute,
