@@ -6,7 +6,8 @@
  * - Nooit gooien: een Brevo-storing mag de login nooit breken.
  * - Niet-blokkerend: op Vercel via `waitUntil`, anders begrensd afwachten.
  *
- * Wisselen naar code-templates (React Email) = alleen dit bestand aanpassen.
+ * Wisselen naar code-templates (React Email) = alleen dit bestand aanpassen
+ * (de rest van de app roept enkel `sendLocalizedEmail` aan).
  */
 import { EMAIL_TEMPLATE_IDS, GLOBAL_FALLBACK_TEMPLATE_ID, type EmailCategory } from "@/emails/template-ids";
 
