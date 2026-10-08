@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api_/public/bluesky/callback")({
 
         if (failure || !code || !returnedState) {
           const message = failure ?? "De aanmelding bij Bluesky is afgebroken.";
-          return redirectTo(`/auth/sign-in?bluesky_error=${encodeURIComponent(message)}`, [clear]);
+          return redirectTo("/auth/sign-in?error=provider_rejected", [clear]);
         }
 
         try {
@@ -63,7 +63,8 @@ export const Route = createFileRoute("/api_/public/bluesky/callback")({
           if (userId) {
             await sql`update public.users set last_sign_in_at = now() where id = ${userId}`;
             const session = await createAppSessionValue(userId);
-            return redirectTo(result.next, [
+            return redirectTo(`/auth/continue`, [
+              `rout_next=${encodeURIComponent(result.next)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=600`,
               clear,
               `rout_session=${encodeURIComponent(session)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${60 * 60 * 24 * 30}`,
             ]);
@@ -78,8 +79,8 @@ export const Route = createFileRoute("/api_/public/bluesky/callback")({
             `${PENDING_COOKIE}=${encodeURIComponent(pending)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=900`,
           ]);
         } catch (error) {
-          const message = error instanceof Error ? error.message : "Bluesky-login mislukte.";
-          return redirectTo(`/auth/sign-in?bluesky_error=${encodeURIComponent(message)}`, [clear]);
+          console.error("[auth] bluesky callback failed", error);
+          return redirectTo("/auth/sign-in?error=provider_rejected", [clear]);
         }
       },
     },

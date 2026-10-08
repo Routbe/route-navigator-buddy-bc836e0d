@@ -15,7 +15,7 @@ import { TourSocialsStep, TOUR_SOCIALS } from "@/components/tour/TourSocialsStep
 import { TourTypographyStep } from "@/components/tour/TourTypographyStep";
 import { useI18n } from "@/lib/i18n";
 import { checkHandleAvailability } from "@/lib/bootstrap.functions";
-import { saveTourDraftToken } from "@/lib/tour-draft.functions";
+import { beginAuthIntent, saveTourDraftToken } from "@/lib/tour-draft.functions";
 import {
   EMPTY_TOUR_DRAFT,
   LAST_TOUR_STEP,
@@ -159,10 +159,13 @@ export default function Tour() {
 
   const canContinue = draft.step !== 1 || handleState === "ok";
 
-  const register = useCallback(() => {
-    const target = `/onboarding?draft=${encodeURIComponent(draft.token)}`;
-    nav(`/auth?redirect=${encodeURIComponent(target)}`);
-  }, [draft.token, nav]);
+  const register = useCallback(async () => {
+    // Laatste versie meteen opslaan, daarna token + bestemming in HttpOnly-cookies.
+    writeLocalTourDraft(draft);
+    await saveTourDraftToken({ data: { token: draft.token, draft } }).catch(() => null);
+    await beginAuthIntent({ data: { draftToken: draft.token, next: "/onboarding" } }).catch(() => null);
+    nav("/auth");
+  }, [draft, nav]);
 
   return (
     <AppLayout

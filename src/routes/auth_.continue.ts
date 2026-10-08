@@ -23,6 +23,7 @@ function seeOther(location: string, cookies: string[] = []) {
 }
 
 const clearNext = `${NEXT_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
+const clearDraft = `${TOUR_DRAFT_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
 
 /**
  * Single landing point after every sign-in (OAuth, magic link, password,
@@ -51,16 +52,22 @@ export async function handlePostAuth(request: Request): Promise<Response> {
   // A pending tour draft always wins: copy it to the account and finish onboarding.
   if (draftToken) {
     try {
-      const { readTourDraftByToken, upsertTourDraft } = await import("@/lib/tour-draft.server");
-      const draft = await readTourDraftByToken(decodeURIComponent(draftToken));
-      if (draft && user.email) await upsertTourDraft(user.email.trim().toLowerCase(), draft);
+      const { readTourDraftByToken, upsertTourDraft, deleteTourDraftByToken } = await import(
+        "@/lib/tour-draft.server"
+      );
+      const token = decodeURIComponent(draftToken);
+      const draft = await readTourDraftByToken(token);
+      if (draft && user.email) {
+        await upsertTourDraft(user.email.trim().toLowerCase(), draft);
+        await deleteTourDraftByToken(token);
+      }
     } catch (err) {
       console.error("[auth] post-auth draft copy failed", err);
     }
     next = "/onboarding";
   }
 
-  return seeOther(next ?? DEFAULT_DESTINATION, [clearNext]);
+  return seeOther(next ?? DEFAULT_DESTINATION, draftToken ? [clearNext, clearDraft] : [clearNext]);
 }
 
 export const Route = createFileRoute("/auth_/continue")({

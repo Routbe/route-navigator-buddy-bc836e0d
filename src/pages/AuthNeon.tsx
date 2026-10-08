@@ -13,6 +13,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
 import { authClient } from "@/lib/auth-client";
 import { authCallbackUrl } from "@/lib/app-url";
+import { POST_AUTH_PATH, SIGN_IN_PATH, AUTH_ERROR_CODES } from "@/lib/auth/post-auth";
+import { beginAuthIntent } from "@/lib/tour-draft.functions";
+
+const AUTH_ERROR_TEXT: Record<string, string> = {
+  provider_rejected: "De aanmelding werd geweigerd. Probeer het opnieuw of kies een andere optie.",
+  provider_not_configured: "Deze inlogoptie is nog niet actief.",
+  session_missing: "We konden je sessie niet bevestigen. Probeer opnieuw in te loggen.",
+  state_mismatch: "De aanmelding is verlopen. Begin opnieuw.",
+  link_expired: "Deze inloglink is verlopen of al gebruikt. Vraag een nieuwe aan.",
+  access_denied: "Je hebt de toegang geweigerd.",
+};
 import { BRAND_ICONS } from "@/utils/brandIcons";
 import { getEnabledProviders } from "@/lib/auth-providers.functions";
 import { BLUESKY_SUFFIXES, normalizeBlueskyHandle, withBlueskySuffix } from "@/lib/bluesky-handle";
@@ -177,23 +188,34 @@ export default function AuthNeon({ initialMode = "magic" }: { initialMode?: Mode
   useEffect(() => {
     if (!user || redirected.current) return;
     redirected.current = true;
-    nav("/dashboard", { replace: true });
+    // Server bepaalt de bestemming (concept, cookie) en stuurt in één 303 door.
+    window.location.replace(POST_AUTH_PATH);
   }, [user, nav]);
 
   // Een mislukte Bluesky-poging komt terug met een leesbare uitleg in de URL.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    const message = params.get("bluesky_error") ?? params.get("mastodon_error");
-    if (message) {
-      toast.error(message);
+    const code = params.get("error");
+    const legacy = params.get("bluesky_error") ?? params.get("mastodon_error");
+    const redirect = params.get("redirect");
+    if (code) {
+      const known = (AUTH_ERROR_CODES as readonly string[]).includes(code) ? code : "provider_rejected";
+      toast.error(AUTH_ERROR_TEXT[known]);
+    } else if (legacy) {
+      toast.error(AUTH_ERROR_TEXT["provider_rejected"]);
+    }
+    // Oude ?redirect=-links: bestemming naar HttpOnly-cookie, URL opschonen.
+    if (redirect) void beginAuthIntent({ data: { next: redirect } }).catch(() => null);
+    if (code || legacy || redirect || params.toString()) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
   // Altijd de canonieke origin: preview-hosts mogen nooit in een OAuth-redirect
   // belanden, anders weigert Google met `redirect_uri_mismatch`.
-  const callbackURL = authCallbackUrl("/dashboard");
+  const callbackURL = authCallbackUrl(POST_AUTH_PATH);
+  const errorCallbackURL = authCallbackUrl(SIGN_IN_PATH);
 
   const onEmailChange = (value: string) => {
     setEmail(value);
@@ -221,7 +243,7 @@ export default function AuthNeon({ initialMode = "magic" }: { initialMode?: Mode
           method: "POST",
           headers: { "content-type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ providerId: provider, callbackURL }),
+          body: JSON.stringify({ providerId: provider, callbackURL, errorCallbackURL }),
         });
         const body = (await res.json().catch(() => null)) as { url?: string; message?: string } | null;
         if (res.ok && body?.url) {
@@ -237,7 +259,7 @@ export default function AuthNeon({ initialMode = "magic" }: { initialMode?: Mode
         );
         return;
       }
-      const result = await authClient.signIn.social({ provider: provider as never, callbackURL });
+      const result = await authClient.signIn.social({ provider: provider as never, callbackURL, errorCallbackURL });
       const error = (result as { error?: { message?: string } } | undefined)?.error;
       if (error) {
         const e = error as { message?: string; code?: string; status?: number };
@@ -265,7 +287,7 @@ export default function AuthNeon({ initialMode = "magic" }: { initialMode?: Mode
     setLoading(true);
     const address = email.trim().toLowerCase();
     try {
-      const result = await authClient.signIn.magicLink({ email: address, callbackURL });
+      const result = await authClient.signIn.magicLink({ email: address, callbackURL, errorCallbackURL });
       const error = (result as { error?: { message?: string; code?: string } } | undefined)?.error;
       if (error) {
         toast.error(
