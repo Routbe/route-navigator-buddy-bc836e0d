@@ -14,11 +14,11 @@ export const Route = createFileRoute("/auth_/mastodon/callback")({
         const state = url.searchParams.get("state");
         const failure = url.searchParams.get("error_description") ?? url.searchParams.get("error");
 
-        const fail = (message: string) =>
-          new Response(null, {
-            status: 302,
-            headers: { location: `/auth/sign-in?mastodon_error=${encodeURIComponent(message)}` },
-          });
+        const fail = (message: string) => {
+          console.warn("[auth] mastodon callback failed", { message });
+          const code = /denied/i.test(message) ? "access_denied" : "provider_rejected";
+          return new Response(null, { status: 303, headers: { location: `/auth/sign-in?error=${code}` } });
+        };
 
         if (failure || !code || !state) {
           return fail(failure ?? "De aanmelding bij je Fediverse-server is afgebroken.");
@@ -43,13 +43,10 @@ export const Route = createFileRoute("/auth_/mastodon/callback")({
             });
           }
           const session = await createAppSessionValue(result.userId);
-          return new Response(null, {
-            status: 302,
-            headers: {
-              location: result.next,
-              "set-cookie": `rout_session=${encodeURIComponent(session)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${60 * 60 * 24 * 30}`,
-            },
-          });
+          const headers = new Headers({ location: "/auth/continue", "cache-control": "no-store" });
+          headers.append("set-cookie", `rout_session=${encodeURIComponent(session)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${60 * 60 * 24 * 30}`);
+          headers.append("set-cookie", `rout_next=${encodeURIComponent(result.next)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=600`);
+          return new Response(null, { status: 303, headers });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Aanmelden via Mastodon mislukte.";

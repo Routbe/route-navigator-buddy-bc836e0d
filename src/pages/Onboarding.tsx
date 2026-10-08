@@ -32,8 +32,8 @@ import type { ProfileDisplayPrefs } from "@/lib/profile-display";
 
 /** Concept-token uit de rondleiding (`/onboarding?draft=…`). */
 function readDraftToken(): string {
-  if (typeof window === "undefined") return "";
-  return new URLSearchParams(window.location.search).get("draft") ?? "";
+  // Het token reist niet meer via de URL; alleen een lokaal concept kent het nog.
+  return "";
 }
 
 /** Zet de ontwerpkeuzes uit de rondleiding om in weergavevoorkeuren. */
@@ -137,12 +137,12 @@ export default function Onboarding() {
               .then((r) => r.draft)
               .catch(() => null)
           : null) ??
-        local ??
         (await getMyTourDraft({})
           .then((r) => r.draft)
-          .catch(() => null));
+          .catch(() => null)) ??
+        local;
       if (!draft) return;
-      setDraftToken(token || draft.token || "");
+      setDraftToken(token || draft.token || local?.token || "");
       if (draft.handle) setHandle((prev) => prev || draft.handle);
       if (draft.displayName) setDisplayName((prev) => prev || draft.displayName);
       if (draft.bio) setBio((prev) => prev || draft.bio);

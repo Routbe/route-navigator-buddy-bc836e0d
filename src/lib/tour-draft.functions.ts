@@ -77,3 +77,21 @@ export const discardTourDraftToken = createServerFn({ method: "POST" })
     }
     return { ok: true as const };
   });
+
+/**
+ * Start van elke aanmelding: legt het concept-token en de bestemming vast in
+ * HttpOnly-cookies, zodat er niets in de URL hoeft. `/auth/continue` leest ze
+ * na de login uit en stuurt in één 303 door.
+ */
+export const beginAuthIntent = createServerFn({ method: "POST" })
+  .inputValidator((input: { draftToken?: string; next?: string }) => input)
+  .handler(async ({ data }) => {
+    const { setCookie } = await import("@tanstack/react-start/server");
+    const { NEXT_COOKIE, TOUR_DRAFT_COOKIE, safeNextPath } = await import("@/lib/auth/post-auth");
+    const opts = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/", maxAge: 60 * 60 };
+    const token = String(data.draftToken ?? "").trim().slice(0, 80);
+    if (token.length >= 8) setCookie(TOUR_DRAFT_COOKIE, token, opts);
+    const next = safeNextPath(data.next ?? null);
+    if (next) setCookie(NEXT_COOKIE, next, opts);
+    return { ok: true as const };
+  });

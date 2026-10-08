@@ -124,6 +124,22 @@ export function createRoutAuth(request?: Request) {
     magicLink({
       expiresIn: 60 * 15,
       sendMagicLink: async ({ email, url }) => {
+        // Rondleiding-concept meteen aan dit e-mailadres koppelen, zodat de
+        // link ook op een ander toestel alle keuzes terugvindt.
+        try {
+          const raw = (request?.headers.get("cookie") ?? "")
+            .split(";")
+            .map((c) => c.trim())
+            .find((c) => c.startsWith("rout_tour_draft="));
+          const token = raw ? decodeURIComponent(raw.slice("rout_tour_draft=".length)) : "";
+          if (token.length >= 8) {
+            const { readTourDraftByToken, upsertTourDraft } = await import("@/lib/tour-draft.server");
+            const draft = await readTourDraftByToken(token);
+            if (draft) await upsertTourDraft(email, draft);
+          }
+        } catch (err) {
+          console.error("[auth] draft link at magic-link send failed", err);
+        }
         const { sendMail } = await import("@/emails/send.server");
         const result = await sendMail({
           to: email,
